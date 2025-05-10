@@ -39,6 +39,7 @@ public class MentionChecker {
         TRANSLIT_MAP.put("l", "л");
         TRANSLIT_MAP.put("m", "м");
         TRANSLIT_MAP.put("n", "н");
+        TRANSLIT_MAP.put("w", "в");
         TRANSLIT_MAP.put("o", "о");
         TRANSLIT_MAP.put("p", "п");
         TRANSLIT_MAP.put("r", "р");
@@ -112,8 +113,6 @@ public class MentionChecker {
         List<String> toCheck = variations.stream()
                 .filter(var -> var != null && !var.isEmpty())
                 .collect(Collectors.toList());
-
-        System.out.println(toCheck);
 
         // Ищем первую подходящую вариацию
         for (String variant : toCheck) {
