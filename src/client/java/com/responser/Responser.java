@@ -75,11 +75,6 @@ public class Responser implements ClientModInitializer {
 			(Text message, boolean overlay) -> {
 				MinecraftClient client = MinecraftClient.getInstance();
 				if (client.player == null) return;
-				if (client.getCurrentServerEntry() == null ||
-						// защита
-						!client.getCurrentServerEntry().address.equalsIgnoreCase("applecraft.online")) {
-					return;
-				}
 
 				String text = message.getString();
 				String senderName = extractSenderName(text);
