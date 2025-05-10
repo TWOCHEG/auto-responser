@@ -63,7 +63,11 @@ public class Responser implements ClientModInitializer {
 				if (client.player == null) return;
 				if (sender.getName().equals(client.getSession().getUsername())) return;
 
-				processMessage(message.getString(), sender.getName(), client, customKeyBinding);
+				ConfigManager cfg = ConfigManager.getInstance();
+				boolean enable = cfg.get("enable");
+				if (!enable) return;
+
+				processMessage(message.getString(), sender.getName(), client, customKeyBinding, cfg);
 			}
 		);
 		// для applecraft.online (там конченый плагин на чат, а я там играю)
@@ -77,7 +81,11 @@ public class Responser implements ClientModInitializer {
 
 				if (senderName == null || senderName.equals(client.getSession().getUsername())) return;
 
-				processMessage(message.getString(), senderName, client, customKeyBinding);
+				ConfigManager cfg = ConfigManager.getInstance();
+				boolean enable = cfg.get("enable");
+				if (!enable) return;
+
+				processMessage(message.getString(), senderName, client, customKeyBinding, cfg);
 			}
 		);
 
@@ -113,7 +121,7 @@ public class Responser implements ClientModInitializer {
 		cancelTask = false;
 	}
 
-	private void processMessage(String text, String senderName, MinecraftClient client, KeyBinding customKeyBinding) {
+	private void processMessage(String text, String senderName, MinecraftClient client, KeyBinding customKeyBinding, ConfigManager cfg) {
 		String playerName = client.getSession().getUsername();
 		String cleanedText = null;
 		String prefix = "";
@@ -167,8 +175,6 @@ public class Responser implements ClientModInitializer {
 		}
 
 		if (cleanedText != null) {
-			ConfigManager cfg = ConfigManager.getInstance();
-
 			Notification.showNotification(
 					"mentioned!",
 					MessageFormat.format(
