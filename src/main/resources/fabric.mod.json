@@ -1,0 +1,40 @@
+{
+	"schemaVersion": 1,
+	"id": "auto_responser",
+	"version": "${version}",
+	"name": "Auto Responser",
+	"description": "AI-based auto responder\nsupports:\n- standard minecraft chat\n- /tell\n- applecraft.online chat\nget start:\n1. get the API key (see links)\n2. select a model (see links)\n3. specify everything in the settings",
+	"authors": [
+		"TWOCHEG"
+	],
+	"icon": "assets/responser/openrouter_icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"client": [
+			"com.responser.Responser"
+		],
+		"modmenu": [
+			"com.responser.config.ModMenuIntegration"
+		]
+	},
+	"depends": {
+		"fabricloader": ">=0.16.10",
+		"minecraft": "~1.21.5",
+		"java": ">=21",
+		"fabric-api": "*",
+		"cloth-config": ">=15.0.140",
+		"modmenu": ">=7.1.0"
+	},
+	"suggests": {
+		"another-mod": "*"
+	},
+	"custom": {
+		"modmenu": {
+			"links": {
+				"api key": "https://openrouter.ai/settings/keys",
+				"free models list": "https://openrouter.ai/models?max_price=0",
+				"git hub": "https://github.com/TWOCHEG/auto-responser"
+			}
+		}
+	}
+}
