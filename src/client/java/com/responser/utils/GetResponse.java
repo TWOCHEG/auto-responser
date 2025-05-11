@@ -12,35 +12,24 @@ import java.net.http.HttpResponse;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Map;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import com.responser.config.ConfigManager;
-import com.responser.utils.Notification;
 
 public class GetResponse {
-    public static String getResponse(String userMessage, String username, Map<String, Deque<JsonObject>> chatHistories) {
+    public static void getResponse(String userMessage, String username, Map<String, Deque<JsonObject>> chatHistories, Consumer<String> contentConsumer) {
         ConfigManager cfg = ConfigManager.getInstance();
         try {
-            // grab or create a deque holding this user's last messages
             Deque<JsonObject> history = chatHistories.computeIfAbsent(username, u -> new ArrayDeque<>());
+            // Note: User message is added to history in the caller (response method)
 
-            // add the new user message to history
-            JsonObject userEntry = new JsonObject();
-            userEntry.addProperty("role", "user");
-            userEntry.addProperty("content", userMessage);
-            history.addLast(userEntry);
-
-            // trim to last 10
-            while (history.size() > 10) {
-                history.removeFirst();
-            }
-
-            // build the payload
+            // Build the payload with streaming enabled
             JsonObject payload = new JsonObject();
             payload.addProperty("model", (String) cfg.get("modelId"));
             payload.addProperty("include_reasoning", false);
-
+            payload.addProperty("stream", true); // Enable streaming
             JsonArray messagesArray = new JsonArray();
-            // include entire history
             for (JsonObject msgObj : history) {
                 messagesArray.add(msgObj);
             }
@@ -56,29 +45,24 @@ public class GetResponse {
                     .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                     .build();
 
-            HttpResponse<String> resp = client.send(request, HttpResponse.BodyHandlers.ofString());
-            JsonObject root = JsonParser.parseString(resp.body()).getAsJsonObject();
-            JsonObject choice = root
-                    .getAsJsonArray("choices")
-                    .get(0)
-                    .getAsJsonObject()
-                    .getAsJsonObject("message");
-            String assistantText = choice.get("content").getAsString();
-
-            // add assistant's reply to history
-            JsonObject assistantEntry = new JsonObject();
-            assistantEntry.addProperty("role", "assistant");
-            assistantEntry.addProperty("content", assistantText);
-            history.addLast(assistantEntry);
-
-            // again trim if needed
-            while (history.size() > 10) {
-                history.removeFirst();
-            }
-            return sanitizeMinecraftChat(assistantText);
+            // Handle response as a stream of lines
+            HttpResponse<Stream<String>> resp = client.send(request, HttpResponse.BodyHandlers.ofLines());
+            resp.body().forEach(line -> {
+                if (line.startsWith("data: ")) {
+                    String data = line.substring(6);
+                    if (!data.equals("[DONE]")) {
+                        JsonObject chunk = JsonParser.parseString(data).getAsJsonObject();
+                        JsonObject choice = chunk.getAsJsonArray("choices").get(0).getAsJsonObject();
+                        if (choice.has("delta") && choice.get("delta").getAsJsonObject().has("content")) {
+                            String contentDelta = choice.get("delta").getAsJsonObject().get("content").getAsString();
+                            contentConsumer.accept(contentDelta);
+                        }
+                    }
+                    // "[DONE]" indicates the stream has ended; no action needed here
+                }
+            });
         } catch (Exception e) {
-            Notification.showNotification("error", String.valueOf(e));
-            return null;
+            throw new RuntimeException("Error processing streaming response: " + e.getMessage(), e);
         }
     }
 

@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import net.fabricmc.loader.api.FabricLoader;
 
+import com.google.gson.reflect.TypeToken;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -37,6 +38,9 @@ public class ConfigManager {
         map.put("modelId", "meta-llama/llama-3.3-70b-instruct");
         map.put("delayS", 3);
         map.put("customMentions", "");
+        map.put("autoOutputMentions", true);
+        map.put("sendDelay", 4000);
+        map.put("delayRandomFactor", 500);
         return map;
     }
 
@@ -70,16 +74,17 @@ public class ConfigManager {
             if (!Files.exists(configFile)) {
                 save();
             } else {
-                String json = Files.readString(configFile, StandardCharsets.UTF_8);
+                String json = Files.readString(configFile, StandardCharsets.UTF_8);                
+                
                 if (!json.isBlank()) {
-                    Map<String, Object> loadedConfig = GSON.fromJson(json, Map.class);
+                    Map<String, Object> loadedConfig = GSON.fromJson(json, new TypeToken<Map<String, Object>>() {}.getType());
                     for (String key : loadedConfig.keySet()) {
                         Object value = loadedConfig.get(key);
                         if (DEFAULTS.containsKey(key) && DEFAULTS.get(key) instanceof Integer && value instanceof Double) {
                             loadedConfig.put(key, ((Double) value).intValue());
                         }
                     }
-                    config = loadedConfig;
+                    config = GSON.fromJson(json, new TypeToken<Map<String, Object>>() {}.getType());
                 }
             }
         } catch (IOException e) {

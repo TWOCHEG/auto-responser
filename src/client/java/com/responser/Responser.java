@@ -18,7 +18,6 @@ import org.lwjgl.glfw.GLFW;
 import com.mojang.authlib.GameProfile;
 
 import java.time.Instant;
-import java.util.Map;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.concurrent.ThreadLocalRandom;
@@ -70,7 +69,7 @@ public class Responser implements ClientModInitializer {
 				processMessage(message.getString(), sender.getName(), client, customKeyBinding, cfg);
 			}
 		);
-		// для applecraft.online (там конченый плагин на чат, а я там играю)
+		// для серверов с плагинами на чат
 		ClientReceiveMessageEvents.GAME.register(
 			(Text message, boolean overlay) -> {
 				MinecraftClient client = MinecraftClient.getInstance();
@@ -111,7 +110,7 @@ public class Responser implements ClientModInitializer {
 
 		scheduledTask = scheduler.schedule(() -> {
 			if (!cancelTask) {
-				client.execute(() -> response(senderName, text, prefix, client));
+				client.execute(() -> response(senderName, text, prefix, client, cfg));
 			}
 			resetFlags();
 		}, ((Number) cfg.get("delayS")).longValue(), TimeUnit.SECONDS);
@@ -186,38 +185,67 @@ public class Responser implements ClientModInitializer {
 		}
 	}
 
-	public static void response(String senderName, String text, String prefix, MinecraftClient client) {
+	public static void response(String senderName, String text, String prefix, MinecraftClient client, ConfigManager cfg) {
 		new Thread(() -> {
-			String resp = GetResponse.getResponse(text, senderName, chatHistories);
-			if (resp == null) return;
+			try {
+				Deque<JsonObject> history = chatHistories.computeIfAbsent(senderName, u -> new ArrayDeque<>());
+				JsonObject userEntry = new JsonObject();
+				userEntry.addProperty("role", "user");
+				userEntry.addProperty("content", text);
+				history.addLast(userEntry);
 
-			int maxLength = 256;
-			int prefixLength = prefix.length();
-			int chunkLength = maxLength - prefixLength;
+				StringBuilder fullResponse = new StringBuilder();
+				StringBuilder accumulator = new StringBuilder();
+				int maxLength = 256;
+				int prefixLength = prefix.length();
+				int chunkLength = maxLength - prefixLength;
 
-			List<String> chunks = new ArrayList<>();
-			for (int i = 0; i < resp.length(); i += chunkLength) {
-				int end = Math.min(i + chunkLength, resp.length());
-				chunks.add(resp.substring(i, end));
-			}
-
-			for (String chunk : chunks) {
-				if (prefix.startsWith("/")) {
-					String command = prefix + chunk;
-					client.execute(() -> client.getNetworkHandler().sendChatCommand(command.substring(1)));
-				} else {
-					String reply = prefix + chunk;
-					client.execute(() -> client.getNetworkHandler().sendChatMessage(reply));
+				GetResponse.getResponse(text, senderName, chatHistories, delta -> {
+					fullResponse.append(delta);
+					String sanitizedDelta = GetResponse.sanitizeMinecraftChat(delta);
+					accumulator.append(sanitizedDelta);
+					while (accumulator.length() >= chunkLength) {
+						String chunk = accumulator.substring(0, chunkLength);
+						accumulator.delete(0, chunkLength);
+						String message = prefix + chunk;
+						if (prefix.startsWith("/")) {
+							String command = message.substring(1);
+							client.execute(() -> client.getNetworkHandler().sendChatCommand(command));
+						} else {
+							client.execute(() -> client.getNetworkHandler().sendChatMessage(message));
+						}
+						try {
+							int randomDelay = ThreadLocalRandom.current().nextInt(
+								Math.max(1, (Integer) cfg.get("sendDelay") - (Integer) cfg.get("delayRandomFactor")),
+								(Integer) cfg.get("sendDelay") + (Integer) cfg.get("delayRandomFactor")
+							);
+							Thread.sleep(randomDelay);
+						} catch (InterruptedException e) {
+							Thread.currentThread().interrupt();
+						}
+					}
+				});
+				if (accumulator.length() > 0) {
+					String remaining = accumulator.toString();
+					String message = prefix + remaining;
+					if (prefix.startsWith("/")) {
+						String command = message.substring(1);
+						client.execute(() -> client.getNetworkHandler().sendChatCommand(command));
+					} else {
+						client.execute(() -> client.getNetworkHandler().sendChatMessage(message));
+					}
 				}
-				try {
-					// обход систем анти спама (вдруг есть)
-					int randomDelay = ThreadLocalRandom.current().nextInt(2000, 4000);
-					System.out.println(randomDelay);
-					Thread.sleep(randomDelay);
-				} catch (InterruptedException e) {
-					Thread.currentThread().interrupt();
-					break;
+
+				JsonObject assistantEntry = new JsonObject();
+				assistantEntry.addProperty("role", "assistant");
+				assistantEntry.addProperty("content", fullResponse.toString());
+				history.addLast(assistantEntry);
+
+				while (history.size() > 10) {
+					history.removeFirst();
 				}
+			} catch (Exception e) {
+				Notification.showNotification("error", "Failed to process response: " + e.getMessage());
 			}
 		}, "ChatRequest-Thread").start();
 	}

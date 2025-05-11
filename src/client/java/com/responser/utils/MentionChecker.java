@@ -85,22 +85,12 @@ public class MentionChecker {
     }
 
     public static String checkMention(String text, String name) {
-        String lowerText = text.toLowerCase();
-        String lowerName = name.toLowerCase();
-
-        // Генерируем все вариации
-        String englishNoDigits = lowerName.replaceAll("\\d", "");
-        String nameRus = transliterateToCyrillic(lowerName);
-        String russianNoDigits = nameRus.replaceAll("\\d", "");
-
-        // Используем Set, чтобы избежать дубликатов, и сохраняем порядок добавления
         Set<String> variations = new LinkedHashSet<>();
-        variations.add(lowerName);
-        variations.add(nameRus);
-        variations.add(englishNoDigits);
-        variations.add(russianNoDigits);
+
+        String lowerText = text.toLowerCase();
 
         ConfigManager cfg = ConfigManager.getInstance();
+
         String customMentions = cfg.get("customMentions");
         if (customMentions != null && !customMentions.isEmpty()) {
             String[] customArray = customMentions.split(",");
@@ -109,10 +99,22 @@ public class MentionChecker {
             }
         }
 
+        if ((Boolean) cfg.get("autoOutputMentions")) {
+            String lowerName = name.toLowerCase();
+            // Генерируем все вариации
+            String englishNoDigits = lowerName.replaceAll("\\d", "");
+            String nameRus = transliterateToCyrillic(lowerName);
+            String russianNoDigits = nameRus.replaceAll("\\d", "");
+
+            variations.add(lowerName);
+            variations.add(nameRus);
+            variations.add(englishNoDigits);
+            variations.add(russianNoDigits);
+        }
         // Удаляем пустые строки
         List<String> toCheck = variations.stream()
-                .filter(var -> var != null && !var.isEmpty())
-                .collect(Collectors.toList());
+            .filter(var -> var != null && !var.isEmpty())
+            .collect(Collectors.toList());
 
         // Ищем первую подходящую вариацию
         for (String variant : toCheck) {

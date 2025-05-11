@@ -2,7 +2,6 @@ package com.responser.utils;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.toast.SystemToast;
-import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 
