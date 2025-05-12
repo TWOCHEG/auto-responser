@@ -3,7 +3,7 @@
 <img src="src/main/resources/assets/responser/openrouter_icon.png" alt="openrouter.ai logo" width="200" height="200">
 
 # Auto Responser
-AI-based auto responder, minecraft mod
+AI auto responder, minecraft mod
 
 </div>
 
