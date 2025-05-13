@@ -22,13 +22,11 @@ public class GetResponse {
         ConfigManager cfg = ConfigManager.getInstance();
         try {
             Deque<JsonObject> history = chatHistories.computeIfAbsent(username, u -> new ArrayDeque<>());
-            // Note: User message is added to history in the caller (response method)
 
-            // Build the payload with streaming enabled
             JsonObject payload = new JsonObject();
             payload.addProperty("model", (String) cfg.get("modelId"));
             payload.addProperty("include_reasoning", false);
-            payload.addProperty("stream", true); // Enable streaming
+            payload.addProperty("stream", true);
             JsonArray messagesArray = new JsonArray();
             for (JsonObject msgObj : history) {
                 messagesArray.add(msgObj);
@@ -58,7 +56,6 @@ public class GetResponse {
                             contentConsumer.accept(contentDelta);
                         }
                     }
-                    // "[DONE]" indicates the stream has ended; no action needed here
                 }
             });
         } catch (Exception e) {

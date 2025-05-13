@@ -25,6 +25,9 @@ public class MentionChecker {
         TRANSLIT_MAP.put("sh", "ш");
         TRANSLIT_MAP.put("yu", "ю");
         TRANSLIT_MAP.put("ya", "я");
+        // цифры
+        TRANSLIT_MAP.put("4", "ч");
+        TRANSLIT_MAP.put("3", "е");
         // Однозвучные
         TRANSLIT_MAP.put("a", "а");
         TRANSLIT_MAP.put("b", "б");
