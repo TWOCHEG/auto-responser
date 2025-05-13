@@ -3,7 +3,7 @@
 <img src="src/main/resources/assets/responser/openrouter_icon.png" alt="openrouter.ai logo" width="200" height="200">
 
 # Auto Responser
-AI-based auto responder, minecraft mod
+AI auto responser, minecraft mod
 
 </div>
 
@@ -21,3 +21,5 @@ AI-based auto responder, minecraft mod
 3. if you haven't canceled the process in any way during this time, a request request will be sent to the API and the response on your behalf will be sent to the chat
 
 enjoy using it :)
+
+[join discord server](https://discord.gg/4eVSEj9jku)
