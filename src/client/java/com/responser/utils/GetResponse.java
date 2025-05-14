@@ -26,6 +26,7 @@ public class GetResponse {
             JsonObject payload = new JsonObject();
             payload.addProperty("model", (String) cfg.get("modelId"));
             payload.addProperty("include_reasoning", false);
+            payload.addProperty("max_tokens", 10000);
             payload.addProperty("stream", true);
             JsonArray messagesArray = new JsonArray();
             for (JsonObject msgObj : history) {

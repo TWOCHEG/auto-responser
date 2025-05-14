@@ -35,7 +35,6 @@ import com.responser.utils.Notification;
 import com.responser.config.ConfigManager;
 
 public class Responser implements ClientModInitializer {
-	// Map username → list of chat entries (each a JsonObject with "role" and "content")
 	private static final Map<String, Deque<JsonObject>> chatHistories = new HashMap<>();
 
 	private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
